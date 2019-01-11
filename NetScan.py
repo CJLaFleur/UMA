@@ -1,6 +1,7 @@
 import multiprocessing as mp
 import socket
 from subprocess import Popen, PIPE
+from multiprocessing import Queue, Process
 
 
 class Network:
@@ -25,14 +26,12 @@ class Network:
             self.StartIP += 1
 
     # Get active hosts
-    def gethosts(self):
-        while not self.IPrange.empty():
-            ip = self.IPrange.get()
-            toping = Popen(['ping', '-c', '1', '-i', '0.1', ip], stdout=PIPE)
-            output = toping.communicate()[0]
-            hostalive = toping.returncode
-            if hostalive == 0:
-                self.ActiveIPs.put(ip)
+    def gethosts(self, ipaddr):
+        toping = Popen(['ping', '-c', '1', '-i', '1', ipaddr], stdout=PIPE)
+        output = toping.communicate()[0]
+        hostalive = toping.returncode
+        if hostalive == 0:
+            self.ActiveIPs.put(ipaddr)
 
     # Get host names
     def gethostnames(self):
@@ -42,10 +41,21 @@ class Network:
             temp = hostn + "\t " + ip
             self.Hostnames.put(temp)
 
+    # Multiprocessor
+    def fast(self):
+        if self.IPrange.qsize() <= 50:
+            count = self.IPrange.qsize()
+            while count > 0:
+                count -= 1
+                proc = mp.Process(target=self.gethosts, args=(self.IPrange.get(),))
+                proc.start()
+
     # Print active hosts
     def printhosts(self):
-        while not self.Hostnames.empty():
+        count = self.Hostnames.qsize()
+        while count > 0:
             print(self.Hostnames.get())
+            count -= 1
 
 
 
@@ -53,7 +63,7 @@ Scan: Network = Network()
 
 Scan.getiprange()
 
-Scan.gethosts()
+Scan.fast()
 
 Scan.gethostnames()
 
