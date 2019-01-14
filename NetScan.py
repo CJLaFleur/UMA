@@ -41,7 +41,7 @@ class Network:
             temp = hostn + "\t " + ip
             self.Hostnames.put(temp)
 
-    # Multiprocessor
+    # Multiprocessor (Limit of 50 threads set to prevent maxing the CPU)
     def fast(self):
         if self.IPrange.qsize() <= 50:
             count = self.IPrange.qsize()
@@ -49,6 +49,12 @@ class Network:
                 count -= 1
                 proc = mp.Process(target=self.gethosts, args=(self.IPrange.get(),))
                 proc.start()
+        else:
+            # proc_count = mp.Queue()
+            while self.IPrange.qsize() > 0:
+                p = mp.Pool(self.IPrange.qsize())
+                print(p.map(self.gethosts, self.IPrange.get()))
+
 
     # Print active hosts
     def printhosts(self):
@@ -59,7 +65,7 @@ class Network:
 
 
 
-Scan: Network = Network()
+Scan = Network()
 
 Scan.getiprange()
 
