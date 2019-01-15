@@ -43,12 +43,17 @@ class Network:
 
     # Multiprocessor (Limit of 50 threads set to prevent maxing the CPU)
     def fast(self):
-        if self.IPrange.qsize() <= 50:
-            count = self.IPrange.qsize()
-            while count > 0:
-                count -= 1
-                proc = mp.Process(target=self.gethosts, args=(self.IPrange.get(),))
-                proc.start()
+        count = self.IPrange.qsize()
+        threads = 0
+        while count > 0:
+            count -= 1
+            proc = mp.Process(target=self.gethosts, args=(self.IPrange.get(),))
+            proc.start()
+            threads += 1
+            if threads == 50:
+                proc.join()
+                threads = 0
+
         else:
             # proc_count = mp.Queue()
             while self.IPrange.qsize() > 0:
