@@ -54,13 +54,6 @@ class Network:
                 proc.join()
                 threads = 0
 
-        else:
-            # proc_count = mp.Queue()
-            while self.IPrange.qsize() > 0:
-                p = mp.Pool(self.IPrange.qsize())
-                print(p.map(self.gethosts, self.IPrange.get()))
-
-
     # Print active hosts
     def printhosts(self):
         count = self.Hostnames.qsize()
