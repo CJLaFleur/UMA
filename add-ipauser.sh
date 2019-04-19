@@ -17,21 +17,36 @@ l="$(echo $fullname | cut -f 2 -d " ")"
 
 usrcount="$(ipa user-find $x | grep -o -E '[0-9]+' | head -1)"
 
+groupid="$(ipa group-find --all | grep "GID" | cut -f 2 -d ":")"
+
 if [ $usrcount -gt 0 ]; then
 
-        ipa user-add $x$usrcount --homedir=/mnt/nfs/users/$x$usrcount --first=$f --last=$l --displayname=$x$usrcount --shell=/bin/bash
+        ipa user-add $x$usrcount --homedir=/mnt/nfs/users/$x$usrcount --first=$f --last=$l --displayname=$x$usrcount --shell=/bin/bash --gidnumber=$groupid
 
         mkdir /mnt/nfs/users/$x$usrcount
 
-        chown $x$usrcount /mnt/nfs/users/$x$usrcount
+        mkdir /mnt/nfs/users/$x$usrcount/.ssh
 
+        ssh-keygen -t rsa -N "" -C "$x$usrcount@obelixmgmt" -f /mnt/nfs/users/$x$usrcount/.ssh/id_rsa
 
+        sshkey="$(cat /mnt/nfs/users/$x$usrcount/.ssh/id_rsa.pub)"
+
+        ipa user-mod $x$usrcount --sshpubkey="$(echo $sshkey)"
+
+        chown -R $x$usrcount /mnt/nfs/users/$x$usrcount
 else
 
     	ipa user-add $x --homedir=/mnt/nfs/users/$x --first=$f --last=$l --displayname=$x --shell=/bin/bash
 
         mkdir /mnt/nfs/users/$x
 
-        chown $x /mnt/nfs/users/$x
+        mkdir /mnt/nfs/users/$x/.ssh
 
+        ssh-keygen -t rsa -N "" -C "$x@obelixmgmt" -f /mnt/nfs/users/$x/.ssh/id_rsa
+
+        sshkey="$(cat /mnt/nfs/users/$x/.ssh/id_rsa.pub)"
+
+        ipa user-mod $x --sshpubkey="$(echo $sshkey)"
+
+        chown -R $x /mnt/nfs/users/$x
 fi
