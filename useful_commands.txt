@@ -1,0 +1,7 @@
+maas $PROFILE machines read hostname=node2 | grep "system_id"
+
+maas $PROFILE machine update $SYSTEM_ID hostname=$HOSTNAME
+
+maas $PROFILE machine set-storage-layout $SYSTEM_ID storage_layout=$LAYOUT_TYPE [$OPTIONS]
+
+maas $PROFILE maas set-config name=default_storage_layout value=flat

@@ -1,0 +1,148 @@
+Remove AppArmor (Head node):
+
+systemctl stop apparmor
+systemctl disable apparmor
+apt remove -y --purge apparmor
+
+Static IP (Head node):
+nano /etc/netplan/50-cloud-init.yaml
+# This file is generated from information provided by
+# the datasource.  Changes to it will not persist across an instance.
+# To disable cloud-init's network configuration capabilities, write a file
+# /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg with the following:
+# network: {config: disabled}
+network:
+  version: 2
+  ethernets:
+    eno1:
+      addresses: [192.168.1.1/24]
+      gateway4: 192.168.1.1
+      dhcp4: false
+      nameservers:
+        addresses: [192.168.1.1, 8.8.8.8]
+    eno2:
+      addresses: [128.119.247.59/25]
+      gateway4: 128.119.247.1
+      dhcp4: false
+      nameservers:
+        addresses: [128.119.247.59, 8.8.8.8]
+netplan apply
+
+DHCP server (Head node):
+apt install isc-dhcp-server -y
+nano /etc/dhcp/dhcpd.conf
+
+option domain-name "cscf.edu";
+
+default-lease-time 600;
+max-lease-time 7200;
+
+ddns-update-style none;
+
+allow booting;
+allow bootp;
+authorative;
+
+
+subnet 192.168.1.0 netmask 255.255.255.0 {
+  range 192.168.1.10 192.168.1.254;
+  option broadcast-address 192.168.1.255;
+  option routers 192.168.1.1;
+  option domain-name-servers 192.168.1.1, 8.8.8.8;
+
+ filename "/pxelinux.0";
+}
+
+
+# force the client to this ip for pxe.
+host pxe_client {
+  hardware ethernet d4:ae:52:c7:78:30;
+  fixed-address 192.168.1.1;
+}
+
+systemctl restart isc-dhcp-server
+systemctl enable isc-dhcp-server
+reboot
+
+MaaS (Head node):
+
+apt install maas -y
+maas init
+
+import ssh keys by doing ssh-keygen on the user, then copying them to the web UI.
+
+set hostname in fqdn format.
+
+IPTABLES (Head node):
+nano /etc/sysctl.conf and uncomment "net.ipv4.ip_forward=1"
+
+iptables -t nat -A POSTROUTING -o eno2 -j MASQUERADE
+iptables -A FORWARD -i eno2 -o eno1 -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -i eno1 -o eno2 -j ACCEPT
+
+apt-get install iptables-persistent -y and save the current configuration
+
+FreeIPA (Mgmt node):
+apt -y install freeipa-server
+
+ipa-server-install
+
+configure dns bind, set dns ip to head node ip
+
+systemctl stop firewalld
+systemctl disable firewalld
+
+NFS (Head node):
+
+Server side:
+
+mkdir /nfs
+mkdir /nfs/users (and anything else needed)
+nano /etc/fstab
+/nfs/users    /nfs/users   none    bind  0  0
+nano /etc/exports
+/nfs       192.168.1.0/24(rw,sync,no_root_squash)
+/nfs/users       192.168.1.0/24(rw,sync,no_root_squash)
+service nfs-kernel-server restart
+
+Client side:
+nano /etc/fstab
+newobelix:/   /mnt   nfs4    _netdev,auto  0  0
+
+nano /etc/nsswitch.conf
+
+passwd:         compat systemd ldap
+group:          compat systemd ldap
+shadow:         compat
+gshadow:        files
+
+hosts:          files mdns4_minimal [NOTFOUND=return] dns myhostname
+networks:	files
+
+protocols:	db files
+services:	db files
+ethers:         db files
+rpc:            db files
+
+netgroup:	nis
+
+nano /etc/selinux/config
+set selinux to disabled
+
+IPA user home directories (to be integrated with kerberos)
+
+mkdir /mnt/nfs/users/uname
+ipa user-add --homedir = ^
+follow the prompts for the command
+chown uname /mnt/nfs/users/uname
+
+Puppet (Mgmt node):
+
+rpm -ivh https://yum.puppetlabs.com/el/7/products/x86_64/puppetlabs-release-7-11.noarch.rpm
+yum install puppetserver
+
+IPA client installation on head node:
+
+apt-get install freeipa-client -y
+ipa-client-install --no-ntp
+NOTE: I CANNOT STRESS THIS ENOUGH! MAKE SURE TO SET THE --no-ntp OPTION!!!!!!!!

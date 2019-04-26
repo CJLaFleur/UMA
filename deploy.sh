@@ -24,12 +24,20 @@ then
 
         sleep 5
 
+        iface_id=$(maas $profile interfaces read $id | jq ".[] | {iface_id:.id, name:.name}" --compact-output | grep eno1 | cut -f 2 -d ":" | cut -f 1 -d ",")
+
+        link_id=$(maas cscf interfaces read $id | jq '.[] | .links[] | {link_id:.id, mode:.mode, ipaddr:.ip_address}' --compact-output | head -n 1 | cut -f 2 -d ":" | cut -f 1 -d "," )
+
+        maas $profile interface unlink-subnet $id $iface_id id=$link_id
+
+        n=$(echo $name | grep -E -o [0-9]+)
+
+        maas $profile interface link-subnet $id $iface_id mode=STATIC subnet=192.168.245.0/24 ip_address=192.168.245.$n
+
         maas $profile machine deploy $id distro_series=$os
-	
-	echo -e "${GREEN}Your machine has been successfully deployed. 
-After the machine finishes booting, run the post-install script deploy.sh located in the /maas directory using the following command:
-ssh $os@ipaddress < deploy$os.sh${NC}"
+
+        echo -e "${GREEN}Your machine has been successfully deployed. 
+After the machine finishes booting, run the post-install script deploy(osname).sh located in the /maas directory using the following command:
+ssh (osname)@ipaddress < deploy(osname).sh${NC}"
+
 fi
-
-
-
