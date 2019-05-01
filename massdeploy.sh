@@ -30,15 +30,6 @@ do
         	maas $profile machine update $id hostname=obelix$n domain=cscf.edu
         	maas $profile machine deploy $id distro_series=bionic
 	fi
-	#maas $profile machines allocate system_id=$id
-	#sleep 5
-	#iface_id=$(maas $profile interfaces read $id | jq ".[] | {iface_id:.id, name:.name}" --compact-output | grep eno1 | cut -f 2 -d ":" | cut -f 1 -d ",")
-	#link_id=$(maas $profile interfaces read $id | jq '.[] | .links[] | {link_id:.id, mode:.mode, ipaddr:.ip_address}' --compact-output | grep "auto" | cut -f 2 -d ":" | cut -f 1 -d "," )
-	#maas $profile interface unlink-subnet $id $iface_id id=$link_id
-	#n=$(maas $profile node power-parameters $id | grep power_a | cut -f 4 -d "." | grep -o -E [0-9]+)
-	#maas $profile interface link-subnet $id $iface_id mode=STATIC subnet=192.168.245.0/24 ip_address=192.168.245.$n
-	#maas $profile machine update $id hostname=obelix$n domain=cscf.edu
-	#maas $profile machine deploy $id distro_series=$os
-
 done < "$input"
 
+rm /tmp/newnodes

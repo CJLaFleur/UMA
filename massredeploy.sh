@@ -9,32 +9,32 @@ echo -e "Enter the OS you want to deploy"
 read os
 
 if [[ $names == *" "* ]]; then
-        echo $names > /tmp/redeploy
-        sed -i 's/ /\n/g' /tmp/redeploy 
+	echo $names > /tmp/redeploy
+	sed -i 's/ /\n/g' /tmp/redeploy 
 
-        input="/tmp/redeploy"
-        while IFS= read -r var
-        do
+	input="/tmp/redeploy"
+	while IFS= read -r var
+	do
 
-                id=$(maas $profile machines read hostname=$var | grep "system_id" | cut -f 4 -d '"' | head -n 1)
+		id=$(maas $profile machines read hostname=$var | grep "system_id" | cut -f 4 -d '"' | head -n 1)
 
-                maas $profile machine release $id
+        	maas $profile machine release $id
 
-                sleep 10
+        	sleep 10
 
-                maas $profile machines allocate system_id=$id
+        	maas $profile machines allocate system_id=$id
 
-                sleep 10
+        	sleep 10
 
-                maas $profile machine deploy $id distro_series=$os
+        	maas $profile machine deploy $id distro_series=$os
 
-        done < "$input"
+	done < "$input"
 
 else 
-        start=$(echo $names | cut -f 1 -d "-")
-        end=$(echo $names | cut -f 2 -d "-")
+	start=$(echo $names | cut -f 1 -d "-")
+	end=$(echo $names | cut -f 2 -d "-")
 
-        for i in $(seq $start $end);
+	for i in $(seq $start $end);
         do
 
                 id=$(maas $profile machines read hostname=obelix$i | grep "system_id" | cut -f 4 -d '"' | head -n 1)
@@ -50,3 +50,4 @@ else
                 maas $profile machine deploy $id distro_series=$os; done
 fi
 
+rm /tmp/redeploy
