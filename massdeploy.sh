@@ -1,7 +1,7 @@
 #!/bin/bash 
 
 profile="cscf"
-maas cscf machines read | jq '.[] | {status_name:.status_name, system_id:.system_id}' --compact-output > /tmp/newnodes
+maas cscf machines read | jq '.[] | {status_name:.status_name, system_id:.system_id}' --compact-output | grep "Ready" > /tmp/newnodes
 
 input="/tmp/newnodes"
 while IFS= read -r var
