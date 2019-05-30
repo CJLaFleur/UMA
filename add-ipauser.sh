@@ -34,6 +34,8 @@ if [ $usrcount -gt 0 ]; then
         ipa user-mod $x$usrcount --sshpubkey="$(echo $sshkey)"
 
         chown -R $x$usrcount /mnt/nfs/users/$x$usrcount
+        
+        echo -e "$secretpass\n$secretpass" | (ipa passwd $x$usrcount)
 else
 
     	ipa user-add $x --homedir=/mnt/nfs/users/$x --first=$f --last=$l --displayname=$x --shell=/bin/bash
@@ -49,4 +51,6 @@ else
         ipa user-mod $x --sshpubkey="$(echo $sshkey)"
 
         chown -R $x /mnt/nfs/users/$x
+        
+        echo -e "$secretpass\n$secretpass" | (ipa passwd $x)
 fi
