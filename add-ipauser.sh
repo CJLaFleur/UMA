@@ -1,5 +1,9 @@
 #!/bin/bash
-
+####
+# TO DO:
+# Implement directory checking so it doesn't try to create another version of an existing directory.
+# This script should be converted to Python. Investigate the freeipa Python module at https://pypi.org/project/python-freeipa/
+####
 echo -e "Enter the full name of the user: "
 read fullname
 
