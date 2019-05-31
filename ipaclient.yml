@@ -1,0 +1,30 @@
+---
+
+- name: Playbook to configure IPA clients with username/password
+  hosts: ipa-clients
+  become: true
+  gather_facts: yes
+  become_user: root
+  vars_files:
+  - ipavault.yml
+
+  tasks:
+  - name: Install IPA client package on Ubuntu
+    apt: name="{{ ipaclient_apt }}" state=present update_cache=yes
+    when: ansible_distribution == "Ubuntu"
+
+  - name: Install IPA client package on CentOS
+    yum: name="{{ ipaclient_yum }}" state=present update_cache=yes
+    when: ansible_distribution == "CentOS"
+
+  - name: Configure IPA client
+    ipaclient:
+      state: present
+      domain: "cs.umass.edu"
+      realm: "CS.UMASS.EDU"
+      principal: "Admin"
+      password: "{{ ipaclient_password }}"
+
+    roles:
+    - role: ipaclient
+      state: present
